@@ -9,6 +9,9 @@ contract CharityFundraiser {
     uint public donorCount;
     bool public isFundraiserOpen = true;
 
+    // Mapping to track unique donors
+    mapping(address => bool) private donors;
+
     // Events to track donations and withdrawals
     event DonationReceived(address indexed donor, uint amount);
     event FundsWithdrawn(address indexed manager, uint amount);
@@ -49,7 +52,12 @@ contract CharityFundraiser {
         require(isFundraiserOpen, "Fundraiser is closed");
 
         totalBalance += msg.value;
-        donorCount += 1;
+
+        // Add donor only if they have not donated before
+        if (!donors[msg.sender]) {
+            donors[msg.sender] = true; 
+            donorCount += 1;           
+        }
 
         emit DonationReceived(msg.sender, msg.value);
     }
@@ -74,8 +82,10 @@ contract CharityFundraiser {
         emit FundraiserClosed();
     }
 
-    // Function to reopen the fundraiser
+    // Function to reopen the fundraiser with restrictions
     function reopenFundraiser() public onlyManager {
+        require(totalBalance < goal, "Fundraiser goal has been reached, cannot reopen");
+
         isFundraiserOpen = true;
         emit FundraiserReopened();
     }
